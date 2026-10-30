@@ -48,9 +48,20 @@ Kullanıcılar görselleri sürükleyip bırakabilir, panodan (Ctrl+V) yapışt�
   - Tesseract güven skoru (Confidence %) ve işlem süresi göstergesi
   - Yazı boyutu büyütme/küçültme kontrolleri (`A-` / `A+`)
   - Boş veya okunamayan görseller için açıklayıcı geri bildirim
-- **Dışa Aktarma Seçenekleri:**
+- **Görsel Ön İşleme & İyileştirme Araçları:**
+  - 🔄 **90° Sağa Döndürme:** Yan veya ters çekilmiş fotoğrafları düzelterek tanıma oranını maksimize eder.
+  - 🌓 **Siyah-Beyaz / Gri Tonlama:** Arka plan gölgelerini ve kağıt gürültüsünü temizler.
+  - ⚡ **Yüksek Kontrast:** Soluk, fotokopi veya termal fişlerdeki silik yazıları belirginleştirir.
+  - 🔄 **Negatif / Ters Çevir:** Koyu tema ekran görüntüleri veya ters zeminler için.
+- **Kamera ile Belge Tarama:**
+  - Cihaz kamerasını (Webcam veya mobil arka kamera) açarak canlı önizleme ve kılavuz çerçeve ile doğrudan evrak fotoğrafı çekip tarama.
+- **Bul ve Değiştir (Find & Replace):**
+  - OCR sonrasında metindeki harf veya kelime hatalarını topluca bulup tek tıkla düzeltme.
+- **Zengin Dışa Aktarma Seçenekleri:**
   - **Panoya Kopyala:** Animasyonlu kopyalandı onayı ile
-  - **TXT İndir:** Orijinal dosya adıyla uyumlu `.txt` dosyası indirme
+  - **TXT İndir:** Düz metin dosyası
+  - **Markdown (.md) İndir:** Başlık, kaynak ve tarih meta verileriyle
+  - **JSON İndir:** Karakter/kelime sayısı, güven skoru ve süre meta verileriyle
 - **Tek Tıkla Demo Testi:**
   - Harici görsel aramaya gerek kalmadan uygulama içi Canvas ile üretilen Türkçe örnek notu tek tıkla yükleyip test etme imkânı.
 
