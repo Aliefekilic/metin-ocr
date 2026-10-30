@@ -9,7 +9,11 @@ import {
   ZoomIn, 
   ZoomOut, 
   Sparkles,
-  AlertTriangle 
+  AlertTriangle,
+  Search,
+  Replace,
+  FileCode,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface ResultEditorProps {
@@ -27,12 +31,16 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
   onTextChange,
   onClearResult,
   originalFileName = 'belge',
-  isProcessing
+  isProcessing,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [fontSizeLevel, setFontSizeLevel] = useState<number>(15); // in pixels
+  const [fontSizeLevel, setFontSizeLevel] = useState<number>(15);
+  const [showFindReplace, setShowFindReplace] = useState<boolean>(false);
+  const [findQuery, setFindQuery] = useState<string>('');
+  const [replaceQuery, setReplaceQuery] = useState<string>('');
+  const [replaceCountMsg, setReplaceCountMsg] = useState<string | null>(null);
 
-  // Handle Copy to clipboard
+  // Handle Copy
   const handleCopy = async () => {
     if (!text) return;
     try {
@@ -44,29 +52,75 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
     }
   };
 
-  // Handle TXT file download
+  // Generic file downloader helper
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const cleanName = originalFileName.replace(/\.[^/.]+$/, '') || 'metin';
+
+  // Download TXT
   const handleDownloadTxt = () => {
     if (!text) return;
-    try {
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      const cleanName = originalFileName.replace(/\.[^/.]+$/, '');
-      link.href = url;
-      link.download = `deskpilot-${cleanName || 'metin'}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('İndirme hatası:', err);
+    downloadFile(text, `deskpilot-${cleanName}.txt`, 'text/plain');
+  };
+
+  // Download Markdown (.md)
+  const handleDownloadMd = () => {
+    if (!text) return;
+    const mdContent = `# DeskPilot OCR Metin Çıktısı\n\n> Kaynak: ${originalFileName} | Tarih: ${new Date().toLocaleDateString('tr-TR')}\n\n---\n\n${text}\n`;
+    downloadFile(mdContent, `deskpilot-${cleanName}.md`, 'text/markdown');
+  };
+
+  // Download JSON with metadata
+  const handleDownloadJson = () => {
+    if (!text) return;
+    const jsonPayload = {
+      meta: {
+        sourceImage: originalFileName,
+        exportedAt: new Date().toISOString(),
+        confidenceScore: result?.confidence ?? null,
+        wordCount: wordCount,
+        characterCount: charCount,
+        processingDurationMs: result?.processingTimeMs ?? null,
+      },
+      content: text,
+    };
+    downloadFile(
+      JSON.stringify(jsonPayload, null, 2),
+      `deskpilot-${cleanName}.json`,
+      'application/json'
+    );
+  };
+
+  // Handle Find & Replace
+  const handleReplaceAll = () => {
+    if (!findQuery) return;
+    const regex = new RegExp(findQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const matches = text.match(regex);
+    const count = matches ? matches.length : 0;
+    
+    if (count > 0) {
+      const updated = text.replace(regex, replaceQuery);
+      onTextChange(updated);
+      setReplaceCountMsg(`${count} adet eşleşme değiştirildi.`);
+    } else {
+      setReplaceCountMsg('Eşleşen metin bulunamadı.');
     }
+    setTimeout(() => setReplaceCountMsg(null), 3000);
   };
 
   // Adjust font size
-  const increaseFontSize = () => setFontSizeLevel(prev => Math.min(prev + 2, 24));
-  const decreaseFontSize = () => setFontSizeLevel(prev => Math.max(prev - 2, 12));
+  const increaseFontSize = () => setFontSizeLevel((prev) => Math.min(prev + 2, 24));
+  const decreaseFontSize = () => setFontSizeLevel((prev) => Math.max(prev - 2, 12));
 
   // Compute live counts
   const trimmed = text.trim();
@@ -86,6 +140,17 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
 
         {/* Toolbar action buttons */}
         <div className="editor-actions-toolbar">
+          {/* Find & Replace toggle */}
+          <button
+            type="button"
+            onClick={() => setShowFindReplace((prev) => !prev)}
+            disabled={!text || isProcessing}
+            className={`ctrl-icon-btn ${showFindReplace ? 'active' : ''}`}
+            title="Metin Bul ve Değiştir"
+          >
+            <Search size={15} />
+          </button>
+
           {/* Font size adjustments */}
           <div className="font-controls">
             <button
@@ -131,7 +196,7 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
             )}
           </button>
 
-          {/* Download TXT Button */}
+          {/* Export Dropdown / Buttons */}
           <button
             type="button"
             onClick={handleDownloadTxt}
@@ -140,8 +205,30 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
             id="btn-download-txt"
             title="TXT Dosyası Olarak İndir"
           >
-            <Download size={16} />
-            <span>TXT İndir</span>
+            <Download size={15} />
+            <span>TXT</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadMd}
+            disabled={!trimmed || isProcessing}
+            className="action-btn-secondary"
+            title="Markdown (.md) Olarak İndir"
+          >
+            <FileCode size={15} />
+            <span>MD</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadJson}
+            disabled={!trimmed || isProcessing}
+            className="action-btn-secondary"
+            title="JSON Formatında İndir"
+          >
+            <FileSpreadsheet size={15} />
+            <span>JSON</span>
           </button>
 
           {/* Clear Result Button */}
@@ -156,6 +243,42 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Find & Replace bar */}
+      {showFindReplace && (
+        <div className="find-replace-bar">
+          <div className="find-input-wrap">
+            <input
+              type="text"
+              placeholder="Aranacak kelime..."
+              value={findQuery}
+              onChange={(e) => setFindQuery(e.target.value)}
+              className="find-input"
+            />
+          </div>
+          <div className="replace-input-wrap">
+            <input
+              type="text"
+              placeholder="Yeni metin..."
+              value={replaceQuery}
+              onChange={(e) => setReplaceQuery(e.target.value)}
+              className="find-input"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleReplaceAll}
+            disabled={!findQuery}
+            className="btn-replace-all"
+          >
+            <Replace size={14} />
+            <span>Tümünü Değiştir</span>
+          </button>
+          {replaceCountMsg && (
+            <span className="replace-status-text">{replaceCountMsg}</span>
+          )}
+        </div>
+      )}
 
       {/* Stats bar */}
       <div className="editor-stats-bar">
@@ -174,7 +297,15 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
         {result && (
           <div className="meta-stats-group">
             {result.confidence !== null && (
-              <span className={`confidence-pill ${result.confidence > 75 ? 'high' : result.confidence > 50 ? 'medium' : 'low'}`}>
+              <span
+                className={`confidence-pill ${
+                  result.confidence > 75
+                    ? 'high'
+                    : result.confidence > 50
+                    ? 'medium'
+                    : 'low'
+                }`}
+              >
                 <Sparkles size={13} />
                 Güven Skoru: %{result.confidence}
               </span>
@@ -196,7 +327,7 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
             <h4>Görselde Okunabilir Metin Tespit Edilemedi</h4>
             <p>
               Yüklenen görsel boş, çok bulanık, düşük çözünürlüklü veya aşırı el yazısı içeriyor olabilir.
-              Daha net, yüksek kontrastlı ve yatay bir görselle tekrar deneyebilirsiniz.
+              Sol paneldeki <strong>İyileştir</strong> menüsünden görseli döndürmeyi, kontrastı artırmayı veya siyah-beyaza çevirmeyi deneyebilirsiniz.
             </p>
           </div>
         ) : (
@@ -219,7 +350,7 @@ export const ResultEditor: React.FC<ResultEditorProps> = ({
 
       {/* Help tooltip note */}
       <div className="editor-footer-note">
-        <span>💡 İpucu: Tanınan metni bu alandan doğrudan düzenleyebilir veya klavyeden yeni notlar ekleyebilirsiniz.</span>
+        <span>💡 İpucu: Tanınan metni buradan düzenleyebilir, Bul & Değiştir ile imla hatalarını düzeltebilir, TXT, MD veya JSON olarak indirebilirsiniz.</span>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import { ResultEditor } from './components/ResultEditor';
 import { FeaturesGuide } from './components/FeaturesGuide';
 import { Footer } from './components/Footer';
 import { AlertBanner } from './components/AlertBanner';
+import { CameraCaptureModal } from './components/CameraCaptureModal';
 import { formatBytes, generateSampleImage } from './utils/formatters';
 import { processImageOcr } from './services/ocrService';
 
@@ -22,10 +23,11 @@ export const App: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('tur+eng');
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
   const [progressState, setProgressState] = useState<OcrProgressState>({
     status: '',
     rawStatus: '',
-    progress: 0
+    progress: 0,
   });
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [ocrResult, setOcrResult] = useState<OcrResultData | null>(null);
@@ -45,94 +47,103 @@ export const App: React.FC = () => {
   }, [uploadedImage]);
 
   // Handle OCR processing
-  const runOcr = useCallback(async (imageFile: File, language: LanguageCode) => {
-    if (isProcessing) return;
+  const runOcr = useCallback(
+    async (imageFile?: File, language?: LanguageCode) => {
+      const targetFile = imageFile || uploadedImage?.file;
+      const targetLang = language || selectedLanguage;
 
-    setIsProcessing(true);
-    setAlert(null);
-    setProgressState({
-      status: 'OCR motoru hazırlanıyor...',
-      rawStatus: 'starting',
-      progress: 5
-    });
+      if (!targetFile || isProcessing) return;
 
-    // Start elapsed timer
-    setElapsedSeconds(0);
-    const startTimestamp = Date.now();
-    timerRef.current = window.setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTimestamp) / 1000));
-    }, 500);
-
-    try {
-      const result = await processImageOcr(imageFile, language, (pState) => {
-        setProgressState(pState);
+      setIsProcessing(true);
+      setAlert(null);
+      setProgressState({
+        status: 'OCR motoru hazırlanıyor...',
+        rawStatus: 'starting',
+        progress: 5,
       });
 
-      setOcrResult(result);
-      setEditableText(result.text);
+      // Start elapsed timer
+      setElapsedSeconds(0);
+      const startTimestamp = Date.now();
+      timerRef.current = window.setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - startTimestamp) / 1000));
+      }, 500);
 
-      if (!result.text.trim()) {
-        setAlert({
-          type: 'warning',
-          message: 'Görsel tarandı ancak okunabilir herhangi bir metin tespit edilemedi. Daha net veya yüksek kontrastlı bir görsel ile deneyebilirsiniz.'
+      try {
+        const result = await processImageOcr(targetFile, targetLang, (pState) => {
+          setProgressState(pState);
         });
-      } else {
+
+        setOcrResult(result);
+        setEditableText(result.text);
+
+        if (!result.text.trim()) {
+          setAlert({
+            type: 'warning',
+            message:
+              'Görsel tarandı ancak okunabilir metin tespit edilemedi. Görseli iyileştirmek için sol paneldeki "İyileştir" butonundan döndürmeyi veya kontrastı artırmayı deneyin.',
+          });
+        } else {
+          setAlert({
+            type: 'success',
+            message: `Metin çıkarma başarıyla tamamlandı! (${result.wordCount} kelime, ${result.charCount} karakter tespit edildi)`,
+          });
+        }
+      } catch (err) {
+        console.error('OCR process failure:', err);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu';
         setAlert({
-          type: 'success',
-          message: `Metin çıkarma başarıyla tamamlandı! (${result.wordCount} kelime, ${result.charCount} karakter tespit edildi)`
+          type: 'error',
+          message: `OCR işlemi sırasında hata oluştu: ${errorMessage}. Lütfen görseli kontrol edin veya sayfayı yenileyip tekrar deneyin.`,
         });
+      } finally {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        setIsProcessing(false);
       }
-    } catch (err) {
-      console.error('OCR process failure:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu';
-      setAlert({
-        type: 'error',
-        message: `OCR işlemi sırasında hata oluştu: ${errorMessage}. Lütfen görseli kontrol edin veya sayfayı yenileyip tekrar deneyin.`
-      });
-    } finally {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+    },
+    [isProcessing, uploadedImage, selectedLanguage]
+  );
+
+  // Handle file selection from Dropzone, Camera, or Paste
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      if (uploadedImage?.previewUrl) {
+        URL.revokeObjectURL(uploadedImage.previewUrl);
       }
-      setIsProcessing(false);
-    }
-  }, [isProcessing]);
 
-  // Handle file selection from Dropzone or Paste
-  const handleFileSelect = useCallback((file: File) => {
-    // Revoke previous preview URL if any
-    if (uploadedImage?.previewUrl) {
-      URL.revokeObjectURL(uploadedImage.previewUrl);
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-    const newImage: UploadedImage = {
-      file,
-      name: file.name,
-      sizeBytes: file.size,
-      sizeFormatted: formatBytes(file.size),
-      previewUrl
-    };
-
-    // Calculate dimensions
-    const img = new Image();
-    img.onload = () => {
-      newImage.dimensions = {
-        width: img.naturalWidth,
-        height: img.naturalHeight
+      const previewUrl = URL.createObjectURL(file);
+      const newImage: UploadedImage = {
+        file,
+        name: file.name,
+        sizeBytes: file.size,
+        sizeFormatted: formatBytes(file.size),
+        previewUrl,
       };
-      setUploadedImage({ ...newImage });
-    };
-    img.src = previewUrl;
 
-    setUploadedImage(newImage);
-    setOcrResult(null);
-    setEditableText('');
-    setAlert(null);
+      const img = new Image();
+      img.onload = () => {
+        newImage.dimensions = {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        };
+        setUploadedImage({ ...newImage });
+      };
+      img.src = previewUrl;
 
-    // Automatically trigger OCR for seamless user experience
-    runOcr(file, selectedLanguage);
-  }, [uploadedImage, selectedLanguage, runOcr]);
+      setUploadedImage(newImage);
+      setOcrResult(null);
+      setEditableText('');
+      setAlert(null);
+
+      // Automatically run OCR
+      runOcr(file, selectedLanguage);
+    },
+    [uploadedImage, selectedLanguage, runOcr]
+  );
 
   // Handle loading sample demo document
   const handleLoadSample = useCallback(async () => {
@@ -142,7 +153,7 @@ export const App: React.FC = () => {
     } catch (err) {
       setAlert({
         type: 'error',
-        message: 'Örnek görsel oluşturulurken bir hata oluştu.'
+        message: 'Örnek görsel oluşturulurken bir hata oluştu.',
       });
     }
   }, [handleFileSelect]);
@@ -150,7 +161,6 @@ export const App: React.FC = () => {
   // Handle language change
   const handleLanguageChange = (newLang: LanguageCode) => {
     setSelectedLanguage(newLang);
-    // If an image is already loaded, prompt user or re-run
     if (uploadedImage && !isProcessing) {
       runOcr(uploadedImage.file, newLang);
     }
@@ -207,6 +217,7 @@ export const App: React.FC = () => {
                 <Dropzone
                   onFileSelected={handleFileSelect}
                   onLoadSample={handleLoadSample}
+                  onOpenCam={() => setIsCameraOpen(true)}
                   disabled={isProcessing}
                   maxSizeBytes={15 * 1024 * 1024}
                 />
@@ -214,7 +225,9 @@ export const App: React.FC = () => {
                 <ImagePreview
                   image={uploadedImage}
                   onClear={handleClear}
-                  onRunOcr={() => runOcr(uploadedImage.file, selectedLanguage)}
+                  onRunOcr={(customFile) =>
+                    runOcr(customFile || uploadedImage.file, selectedLanguage)
+                  }
                   isProcessing={isProcessing}
                 />
               )}
@@ -247,6 +260,13 @@ export const App: React.FC = () => {
           <FeaturesGuide />
         </div>
       </main>
+
+      {/* Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleFileSelect}
+      />
 
       <Footer />
     </div>

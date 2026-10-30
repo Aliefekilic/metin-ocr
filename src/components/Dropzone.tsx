@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, AlertCircle, FileCheck2 } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, Sparkles, AlertCircle, FileCheck2, Camera } from 'lucide-react';
 import { formatBytes } from '../utils/formatters';
 
 interface DropzoneProps {
   onFileSelected: (file: File) => void;
   onLoadSample: () => void;
+  onOpenCam: () => void;
   disabled?: boolean;
   maxSizeBytes?: number;
 }
@@ -16,39 +17,43 @@ const DEFAULT_MAX_SIZE = 15 * 1024 * 1024; // 15 MB
 export const Dropzone: React.FC<DropzoneProps> = ({
   onFileSelected,
   onLoadSample,
+  onOpenCam,
   disabled = false,
-  maxSizeBytes = DEFAULT_MAX_SIZE
+  maxSizeBytes = DEFAULT_MAX_SIZE,
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateAndPassFile = useCallback((file: File) => {
-    setLocalError(null);
+  const validateAndPassFile = useCallback(
+    (file: File) => {
+      setLocalError(null);
 
-    // File type validation
-    const fileType = file.type.toLowerCase();
-    const fileName = file.name.toLowerCase();
-    const hasValidExt = SUPPORTED_EXTENSIONS.some(ext => fileName.endsWith(ext));
-    const hasValidMime = SUPPORTED_MIME_TYPES.includes(fileType);
+      // File type validation
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      const hasValidExt = SUPPORTED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+      const hasValidMime = SUPPORTED_MIME_TYPES.includes(fileType);
 
-    if (!hasValidMime && !hasValidExt) {
-      setLocalError(
-        `Desteklenmeyen dosya formatı ("${file.name}"). Lütfen sadece PNG, JPG/JPEG veya WEBP formatında bir görsel yükleyin.`
-      );
-      return;
-    }
+      if (!hasValidMime && !hasValidExt) {
+        setLocalError(
+          `Desteklenmeyen dosya formatı ("${file.name}"). Lütfen sadece PNG, JPG/JPEG veya WEBP formatında bir görsel yükleyin.`
+        );
+        return;
+      }
 
-    // Size limit validation (15 MB)
-    if (file.size > maxSizeBytes) {
-      setLocalError(
-        `Dosya boyutu çok büyük (${formatBytes(file.size)}). DeskPilot maksimum ${formatBytes(maxSizeBytes)} boyutundaki görselleri kabul etmektedir.`
-      );
-      return;
-    }
+      // Size limit validation (15 MB)
+      if (file.size > maxSizeBytes) {
+        setLocalError(
+          `Dosya boyutu çok büyük (${formatBytes(file.size)}). DeskPilot maksimum ${formatBytes(maxSizeBytes)} boyutundaki görselleri kabul etmektedir.`
+        );
+        return;
+      }
 
-    onFileSelected(file);
-  }, [maxSizeBytes, onFileSelected]);
+      onFileSelected(file);
+    },
+    [maxSizeBytes, onFileSelected]
+  );
 
   // Handle Drag Over
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -85,12 +90,11 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       const selected = e.target.files[0];
       validateAndPassFile(selected);
-      // Reset input value to allow re-uploading the same file if needed
       e.target.value = '';
     }
   };
 
-  // Handle global paste event (Ctrl+V anywhere on window)
+  // Handle global paste event (Ctrl+V)
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (disabled) return;
@@ -146,9 +150,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
             <UploadCloud size={44} className="upload-icon" />
           </div>
 
-          <h2 className="dropzone-title">
-            Görseli buraya sürükleyip bırakın
-          </h2>
+          <h2 className="dropzone-title">Görseli buraya sürükleyip bırakın</h2>
           <p className="dropzone-subtitle">
             veya cihazınızdan dosya seçmek için <span className="highlight-browse">göz atın</span>
           </p>
@@ -176,9 +178,22 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         </div>
       )}
 
-      {/* Quick sample loader button */}
+      {/* Quick action buttons row: Sample + Camera */}
       <div className="sample-loader-row">
-        <span className="sample-text">Hemen denemek için:</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenCam();
+          }}
+          disabled={disabled}
+          className="cam-btn"
+          title="Kamera ile fotoğraf çekerek belge tara"
+        >
+          <Camera size={15} />
+          <span>Kamera ile Çek</span>
+        </button>
+
         <button
           type="button"
           onClick={(e) => {
@@ -189,7 +204,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
           className="sample-btn"
         >
           <Sparkles size={15} className="sample-btn-icon" />
-          Örnek Türkçe Not Yükle (Tek Tıkla Dene)
+          <span>Örnek Türkçe Notu Yükle</span>
         </button>
       </div>
     </div>
