@@ -4,12 +4,14 @@ import {
   Trash2, 
   RefreshCw, 
   Eye, 
-  Sparkles, 
   RotateCw, 
   SlidersHorizontal, 
   Contrast, 
   SunMedium, 
-  Undo2 
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+  ScanText
 } from 'lucide-react';
 import { 
   type ImageFilterOptions, 
@@ -37,6 +39,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [filteredFile, setFilteredFile] = useState<File>(image.file);
   const [isApplyingFilter, setIsApplyingFilter] = useState<boolean>(false);
   const [showFiltersPanel, setShowFiltersPanel] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
 
   // Apply new filters
   const handleUpdateFilters = async (newFilters: ImageFilterOptions) => {
@@ -74,12 +77,27 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
     handleUpdateFilters({ ...filters, invert: !filters.invert });
   };
 
+  // Preset: Receipt / Invoice (High contrast + grayscale)
+  const handlePresetReceipt = () => {
+    handleUpdateFilters({
+      ...filters,
+      grayscale: true,
+      highContrast: true,
+      invert: false,
+    });
+  };
+
   // Reset Filters
   const handleResetFilters = () => {
     setFilters(DEFAULT_FILTERS);
     setActivePreviewUrl(image.previewUrl);
     setFilteredFile(image.file);
   };
+
+  // Zoom controls
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 25, 250));
+  const handleZoomOut = () => setZoomLevel((z) => Math.max(z - 25, 50));
+  const handleResetZoom = () => setZoomLevel(100);
 
   const hasActiveFilters =
     filters.rotation !== 0 ||
@@ -92,10 +110,40 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
       <div className="preview-header">
         <div className="preview-title-wrap">
           <Eye size={18} className="text-primary" />
-          <h3 className="preview-title">Yüklenen Görsel</h3>
+          <h3 className="preview-title">Yüklenen Belge</h3>
         </div>
 
         <div className="preview-actions">
+          {/* Zoom controls */}
+          <div className="zoom-controls-group">
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 50}
+              className="ctrl-icon-btn"
+              title="Görseli Uzaklaştır"
+            >
+              <ZoomOut size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              className="zoom-level-indicator"
+              title="Varsayılan Boyuta Sıfırla"
+            >
+              %{zoomLevel}
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 250}
+              className="ctrl-icon-btn"
+              title="Görseli Yakınlaştır"
+            >
+              <ZoomIn size={14} />
+            </button>
+          </div>
+
           {/* Toggle filter tools button */}
           <button
             type="button"
@@ -104,7 +152,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             className={`action-btn-secondary filter-toggle-btn ${showFiltersPanel ? 'active' : ''}`}
             title="Görsel İyileştirme Araçları (Döndür, Kontrast, Siyah-Beyaz)"
           >
-            <SlidersHorizontal size={15} />
+            <SlidersHorizontal size={14} />
             <span>İyileştir</span>
           </button>
 
@@ -115,7 +163,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             className="action-btn-danger"
             title="Görseli ve sonucu kaldır"
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
             <span>Kaldır</span>
           </button>
         </div>
@@ -131,7 +179,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             className="filter-tool-btn"
             title="90 Derece Sağa Döndür"
           >
-            <RotateCw size={14} />
+            <RotateCw size={13} />
             <span>Döndür {filters.rotation > 0 ? `(${filters.rotation}°)` : ''}</span>
           </button>
 
@@ -140,10 +188,10 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             onClick={handleToggleGrayscale}
             disabled={isProcessing || isApplyingFilter}
             className={`filter-tool-btn ${filters.grayscale ? 'active' : ''}`}
-            title="Siyah-Beyaz / Gri Tonlama (Arka plan gürültüsünü temizler)"
+            title="Siyah-Beyaz / Gri Tonlama (Arka plan lekelerini ve renk gürültüsünü temizler)"
           >
-            <SunMedium size={14} />
-            <span>Siyah-Beyaz</span>
+            <SunMedium size={13} />
+            <span>Gri Ton</span>
           </button>
 
           <button
@@ -151,10 +199,20 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             onClick={handleToggleContrast}
             disabled={isProcessing || isApplyingFilter}
             className={`filter-tool-btn ${filters.highContrast ? 'active' : ''}`}
-            title="Yüksek Kontrast (Soluk yazıları belirginleştirir)"
+            title="Yüksek Kontrast (Soluk ve silik yazıları belirginleştirir)"
           >
-            <Contrast size={14} />
+            <Contrast size={13} />
             <span>Yüksek Kontrast</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePresetReceipt}
+            disabled={isProcessing || isApplyingFilter}
+            className="filter-tool-btn preset-btn"
+            title="Fiş, fatura ve termal kağıtlar için otomatik iyileştirme"
+          >
+            <span>Evrak / Fiş Modu</span>
           </button>
 
           <button
@@ -164,7 +222,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             className={`filter-tool-btn ${filters.invert ? 'active' : ''}`}
             title="Renkleri Tersine Çevir (Negatif)"
           >
-            <span>Ters Çevir</span>
+            <span>Negatif</span>
           </button>
 
           {hasActiveFilters && (
@@ -175,7 +233,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
               className="filter-tool-btn reset-btn"
               title="Filtreleri Sıfırla"
             >
-              <Undo2 size={14} />
+              <Undo2 size={13} />
               <span>Sıfırla</span>
             </button>
           )}
@@ -183,16 +241,26 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
       )}
 
       <div className="preview-image-container">
-        <img
-          src={activePreviewUrl}
-          alt={image.name}
-          className="preview-img-element"
-        />
+        <div 
+          className="preview-image-scrollable"
+          style={{ overflow: zoomLevel > 100 ? 'auto' : 'hidden' }}
+        >
+          <img
+            src={activePreviewUrl}
+            alt={image.name}
+            className="preview-img-element"
+            style={{ 
+              transform: `scale(${zoomLevel / 100})`, 
+              transformOrigin: 'top center',
+              transition: 'transform 0.15s ease-out'
+            }}
+          />
+        </div>
 
         {isApplyingFilter && (
           <div className="filter-loading-overlay">
-            <RefreshCw size={24} className="spinner-icon text-indigo" />
-            <span>Filtre uygulanıyor...</span>
+            <RefreshCw size={24} className="spinner-icon text-primary" />
+            <span>Görsel filtreleniyor...</span>
           </div>
         )}
 
@@ -205,7 +273,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
             </span>
           )}
           {hasActiveFilters && (
-            <span className="info-chip active-filter-chip">Filtreli Görsel</span>
+            <span className="info-chip active-filter-chip">İyileştirilmiş Görsel</span>
           )}
         </div>
       </div>
@@ -220,15 +288,15 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
         >
           {isProcessing ? (
             <>
-              <RefreshCw size={18} className="spinner-icon" />
+              <RefreshCw size={17} className="spinner-icon" />
               <span>Metin Taranıyor...</span>
             </>
           ) : (
             <>
-              <Sparkles size={18} />
+              <ScanText size={17} />
               <span>
                 {hasActiveFilters
-                  ? 'Filtreli Görselden Metni Çıkar (OCR)'
+                  ? 'Filtreli Belgeden Metni Çıkar (OCR)'
                   : 'Metni Çıkar (OCR Başlat)'}
               </span>
             </>

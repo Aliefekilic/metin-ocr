@@ -1,5 +1,7 @@
 export type LanguageCode = 'tur+eng' | 'tur' | 'eng';
 
+export type ThemeMode = 'light' | 'dark';
+
 export interface LanguageOption {
   code: LanguageCode;
   label: string;
@@ -39,4 +41,14 @@ export interface OcrResultData {
 export interface StatusToast {
   type: 'success' | 'warning' | 'error' | 'info';
   message: string;
+}
+
+export interface ScanHistoryItem {
+  id: string;
+  fileName: string;
+  text: string;
+  timestamp: number;
+  charCount: number;
+  wordCount: number;
+  confidence: number | null;
 }

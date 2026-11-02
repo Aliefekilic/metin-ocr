@@ -1,98 +1,170 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Cpu, 
   FileCheck, 
-  HelpCircle, 
-  CheckCircle, 
-  Layers, 
-  Info 
+  ChevronDown, 
+  Lightbulb,
+  HelpCircle,
+  Keyboard
 } from 'lucide-react';
 
 export const FeaturesGuide: React.FC = () => {
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaqIndex((prev) => (prev === index ? null : index));
+  };
+
+  const faqs = [
+    {
+      q: 'Görsellerim veya belgelerim herhangi bir sunucuya yükleniyor mu?',
+      a: 'Kesinlikle hayır. Tüm metin tanıma (OCR) işlemi doğrudan bilgisayarınızın veya telefonunuzun işlem gücü kullanılarak, tarayıcınızın içindeki WebAssembly motoru ile yerel olarak gerçekleştirilir. Verileriniz hiçbir sunucuya iletilmez.',
+    },
+    {
+      q: 'Türkçe karakterlerde (ç, ğ, ı, İ, ö, ş, ü) doğruluk nasıl sağlanıyor?',
+      a: 'Uygulama, Türkçe dil morfolojisi ve özel harfleri için özel eğitilmiş veri setlerini (traineddata) kullanır. Türkçe + İngilizce seçeneği ise hem Türkçe özel karakterleri hem de İngilizce teknik terimleri kusursuz şekilde yakalar.',
+    },
+    {
+      q: 'En iyi tarama sonucu almak için nelere dikkat etmeliyim?',
+      a: 'Görselin gölgesiz ve iyi aydınlatılmış olması, yazının düz açıyla çekilmesi ve bulanık olmaması önemlidir. Yan duran fotoğrafları sol paneldeki "Döndür" aracıyla, soluk termal fişleri ise "Yüksek Kontrast" veya "Gri Ton" araçlarıyla iyileştirebilirsiniz.',
+    },
+    {
+      q: 'El yazısı metinleri okuyabilir mi?',
+      a: 'Basılı evrak, kitap, fatura, makale ve ekran görüntülerinde %95+ doğruluk elde edilir. Okunaklı ve temiz el yazıları da taranabilir; ancak karmaşık elyazılarında kontrastı artırmanız önerilir.',
+    },
+    {
+      q: 'Hangi dosya türlerini ve boyutları kullanabilirim?',
+      a: 'PNG, JPG, JPEG ve WEBP formatlarında, 15 MB boyutuna kadar tüm görselleri destekler. Dilerseniz ekran görüntüsü alıp doğrudan klavyeden Ctrl+V ile yapıştırabilirsiniz.',
+    },
+  ];
+
   return (
     <section className="features-guide-section">
+      {/* 3 Pillar Cards */}
       <div className="features-grid">
-        {/* Card 1: Privacy */}
         <div className="feature-card">
           <div className="feature-icon-box bg-emerald-dim">
-            <ShieldCheck className="text-emerald" size={24} />
+            <ShieldCheck className="text-emerald" size={22} />
           </div>
-          <h4 className="feature-title">%100 Tarayıcıda & Gizli</h4>
+          <h4 className="feature-title">%100 İstemci Taraflı & Gizli</h4>
           <p className="feature-text">
-            Görselleriniz hiçbir sunucuya yüklenmez veya saklanmaz. Tüm OCR işlemi cihazınızın kendi işlem gücüyle tarayıcınızda gerçekleştirilir.
+            Belgeleriniz asla harici sunuculara gitmez. OCR hesaplaması cihazınızın donanımında, tarayıcınızda tamamlanır.
           </p>
         </div>
 
-        {/* Card 2: Engine */}
         <div className="feature-card">
           <div className="feature-icon-box bg-indigo-dim">
-            <Cpu className="text-indigo" size={24} />
+            <Cpu className="text-primary" size={22} />
           </div>
-          <h4 className="feature-title">Tesseract.js OCR Motoru</h4>
+          <h4 className="feature-title">Yerel Tesseract Motoru</h4>
           <p className="feature-text">
-            WebAssembly ile çalışan gelişmiş OCR altyapısı. İlk kullanımda gerekli dil paketi önbelleğe alınır, sonraki taramalarda hızlanır.
+            WebAssembly tabanlı açık kaynak OCR motoru. İlk kullanımda dil modeli yerel önbelleğe alınır, sonraki işlemler anında başlar.
           </p>
         </div>
 
-        {/* Card 3: TR Char Support */}
         <div className="feature-card">
           <div className="feature-icon-box bg-cyan-dim">
-            <FileCheck className="text-cyan" size={24} />
+            <FileCheck className="text-cyan" size={22} />
           </div>
-          <h4 className="feature-title">Türkçe Karakter Desteği</h4>
+          <h4 className="feature-title">Gelişmiş Türkçe Desteği</h4>
           <p className="feature-text">
-            ç, ğ, ı, İ, ö, ş, ü gibi Türkçe özel harfler tam uyumlulukla algılanır. Ders notları, makaleler ve faturalar kolayca dijitalleşir.
+            ç, ğ, ı, İ, ö, ş, ü gibi harfler ve Türkçe imla kuralları eksiksiz taranır. Fatura, fiş, ders notu ve ekran görüntüleri için optimize edilmiştir.
           </p>
         </div>
       </div>
 
-      {/* Accordion or info box for guidance and roadmap */}
-      <div className="guide-roadmap-box">
-        <div className="guide-header">
-          <div className="guide-title-row">
-            <Layers size={20} className="text-indigo" />
-            <h4 className="guide-title">DeskPilot Ürün Bilgisi ve Sürüm Planı</h4>
+      {/* Two columns: OCR Tips & Shortcuts */}
+      <div className="info-dual-grid">
+        {/* Column 1: Best Practices */}
+        <div className="info-card">
+          <div className="info-card-header">
+            <Lightbulb size={18} className="text-amber" />
+            <h4>Daha İyi Sonuçlar İçin İpuçları</h4>
           </div>
-          <span className="current-version-tag">Aktif: v1.0 Kararlı</span>
+          <ul className="tips-list">
+            <li>
+              <strong>Düz Açı:</strong> Belgeyi çerçeveye paralel tutun. Yan çekilmiş fotoğraflarda <em>Döndür</em> butonunu kullanın.
+            </li>
+            <li>
+              <strong>Işık & Gölge:</strong> Üzerine parmak veya telefon gölgesi düşen alanlarda harf atlamaları yaşanabilir; homojen aydınlatma tercih edin.
+            </li>
+            <li>
+              <strong>Fiş ve Soluk Yazılar:</strong> Termal market fişleri veya soluk fotokopiler için <em>İyileştir &gt; Yüksek Kontrast</em> filtresini aktifleştirin.
+            </li>
+            <li>
+              <strong>Metin Temizliği:</strong> OCR sonrasında kırık satırları tek hamlede düzeltmek için sağ paneldeki <em>Satırları Birleştir</em> aracını kullanın.
+            </li>
+          </ul>
         </div>
 
-        <div className="guide-content-grid">
-          <div className="guide-col">
-            <div className="guide-col-title">
-              <CheckCircle size={16} className="text-emerald" />
-              <span>v1.0 Özellikleri (Tamamlanan)</span>
-            </div>
-            <ul className="guide-list">
-              <li>PNG, JPG, WEBP formatları ve 15 MB dosya sınırı denetimi</li>
-              <li>Türkçe + İngilizce, Yalnızca Türkçe veya İngilizce dil seçimi</li>
-              <li>Yüklenen görselin önizlemesi ve anlık boyut bilgileri</li>
-              <li>Canlı ilerleme durumu (% göstergesi ve aşama açıklamaları)</li>
-              <li>Düzenlenebilir sonuç alanı, panoya kopyalama ve .TXT indirme</li>
-              <li>Görsel ve sonuç temizleme, bellek optimizasyonu (URL.revokeObjectURL)</li>
-            </ul>
+        {/* Column 2: Shortcuts */}
+        <div className="info-card">
+          <div className="info-card-header">
+            <Keyboard size={18} className="text-primary" />
+            <h4>Hızlı Klavye Kısayolları</h4>
           </div>
-
-          <div className="guide-col">
-            <div className="guide-col-title">
-              <Info size={16} className="text-cyan" />
-              <span>Gelecek Sürümler (Yol Haritası)</span>
+          <div className="shortcut-cards-wrap">
+            <div className="shortcut-mini-row">
+              <span className="sc-label">Panodan Anında Yapıştır</span>
+              <div className="sc-keys">
+                <kbd>Ctrl</kbd> + <kbd>V</kbd>
+              </div>
             </div>
-            <ul className="guide-list">
-              <li><strong>v1.1:</strong> PDF dosya desteği ve sayfa bazlı metin ayrıştırma</li>
-              <li><strong>v1.2:</strong> Birden fazla görseli sırayla kuyrukta işleme</li>
-              <li><strong>v1.3:</strong> Aranabilir PDF ve DOCX olarak dışa aktarma</li>
-              <li><strong>v2.0:</strong> İsteğe bağlı AI ile imla düzeltme ve özetleme</li>
-            </ul>
+            <div className="shortcut-mini-row">
+              <span className="sc-label">Taramayı (OCR) Başlat</span>
+              <div className="sc-keys">
+                <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+              </div>
+            </div>
+            <div className="shortcut-mini-row">
+              <span className="sc-label">Bul & Değiştir Çubuğu</span>
+              <div className="sc-keys">
+                <kbd>Ctrl</kbd> + <kbd>F</kbd>
+              </div>
+            </div>
+            <div className="shortcut-mini-row">
+              <span className="sc-label">Açık Pencereleri Kapat</span>
+              <div className="sc-keys">
+                <kbd>Esc</kbd>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="disclaimer-callout">
-          <HelpCircle size={16} className="disclaimer-icon" />
-          <p>
-            <strong>Önemli Hatırlatma:</strong> OCR sonuçları görselin netliğine, ışığına ve yazı tipine bağlı olarak değişiklik gösterebilir.
-            Lütfen kritik resmi veya finansal evraklardaki verileri dışa aktarmadan önce kontrol ediniz.
-          </p>
+      {/* Interactive FAQ Accordion */}
+      <div className="faq-container-box">
+        <div className="faq-header-row">
+          <div className="faq-title-wrap">
+            <HelpCircle size={18} className="text-primary" />
+            <h4>Sıkça Sorulan Sorular</h4>
+          </div>
+          <span className="faq-subtitle">Metin OCR hakkında merak edilenler</span>
+        </div>
+
+        <div className="faq-list">
+          {faqs.map((faq, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div key={idx} className={`faq-item ${isOpen ? 'open' : ''}`}>
+                <button
+                  type="button"
+                  className="faq-question-btn"
+                  onClick={() => toggleFaq(idx)}
+                  aria-expanded={isOpen}
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown size={16} className={`chevron-icon ${isOpen ? 'rotate' : ''}`} />
+                </button>
+                {isOpen && (
+                  <div className="faq-answer">
+                    <p>{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

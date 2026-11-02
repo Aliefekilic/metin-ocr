@@ -98,7 +98,7 @@ export function generateSampleImage(): Promise<File> {
       // Header Banner
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 34px Arial, sans-serif';
-      ctx.fillText('DeskPilot OCR Test Belgesi', 50, 80);
+      ctx.fillText('Metin OCR Örnek Test Belgesi', 50, 80);
 
       // Subtitle
       ctx.fillStyle = '#475569';
@@ -106,7 +106,7 @@ export function generateSampleImage(): Promise<File> {
       ctx.fillText('Türkçe Karakter ve Sayısal Metin Doğrulama', 50, 115);
 
       // Divider line
-      ctx.strokeStyle = '#6366f1';
+      ctx.strokeStyle = '#4f46e5';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(50, 135);
@@ -140,7 +140,7 @@ export function generateSampleImage(): Promise<File> {
       // Footer note
       ctx.fillStyle = '#94a3b8';
       ctx.font = 'italic 16px Arial, sans-serif';
-      ctx.fillText('DeskPilot v1.0 • Tarayıcı içi metin tanıma motoru', 50, 690);
+      ctx.fillText('Metin • Tarayıcı içi yerel metin tanıma motoru', 50, 690);
 
       canvas.toBlob((blob) => {
         if (!blob) {

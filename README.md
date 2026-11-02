@@ -1,160 +1,107 @@
-# DeskPilot — Görselden Metin Çıkarma (OCR) Web Uygulaması
+# Metin — Görselden Metin Dönüştürücü (Yerel Web OCR)
 
 <p align="center">
-  <img src="./public/favicon.svg" width="64" height="64" alt="DeskPilot Logo" />
+  <img src="./public/favicon.svg" width="60" height="60" alt="Metin Logo" />
   <br>
-  <strong>Tarayıcıda Çalışan, Gizlilik Odaklı ve Türkçe Destekli Modern OCR Aracı</strong>
+  <strong>Tarayıcıda %100 Yerel Çalışan, Gizlilik Odaklı ve Türkçe Destekli Modern OCR Aracı</strong>
   <br>
-  <em>React + TypeScript + Vite + Tesseract.js</em>
+  <em>React 19 + TypeScript + Vite + Tesseract.js WebAssembly</em>
 </p>
 
 ---
 
 ## 📌 Proje Hakkında
 
-**DeskPilot**, PNG, JPG/JPEG ve WEBP formatındaki görsellerdeki basılı veya dijital yazıları tarayıcı üzerinde yerel olarak analiz edip düzenlenebilir dijital metne dönüştüren açık kaynaklı bir web uygulamasıdır.
+**Metin**, taranmış evraklar, makaleler, ders notları, faturalar veya ekran görüntülerindeki basılı ve dijital yazıları tarayıcınızın donanım ivmesiyle **hiçbir harici sunucuya göndermeden** doğrudan dijital metne dönüştüren açık kaynaklı bir web uygulamasıdır.
 
-Kullanıcılar görselleri sürükleyip bırakabilir, panodan (Ctrl+V) yapıştırabilir veya dosya seçiciyle yükleyebilir. İşlem tamamlandığında metin doğrudan düzenlenebilir, tek tıkla panoya kopyalanabilir veya `.txt` dosyası olarak indirilebilir.
-
-### Hedef Kullanıcı Kitlesi
-* **Öğrenciler:** Ders notlarını, slaytları ve kitap sayfalarını dijital ortama aktarmak isteyenler.
-* **Ofis ve Ekran Kullanıcıları:** Ekran görüntülerindeki (screenshot) hata mesajlarını, kod parçalarını veya yazıları kopyalamak isteyenler.
-* **Küçük İşletmeler:** Basılı fatura, fiş veya evraklardan metin çıkarması gereken profesyoneller.
+Kullanıcılar görselleri sürükleyip bırakabilir, panodan (`Ctrl + V`) anında yapıştırabilir, dosya seçebilir veya cihaz kamerasıyla çekebilir. Çıkarılan metin üzerinde kopuk satırları birleştirme, fazla boşlukları ayıklama, büyük/küçük harf dönüştürme gibi akıllı düzenlemeler yapılabilir; ardından tek tıkla panoya kopyalanabilir veya TXT, Markdown, JSON ya da yazıcı/PDF olarak dışa aktarılabilir.
 
 ---
 
-## 🚀 Öne Çıkan Özellikler (v1.0)
+## 🚀 Öne Çıkan Özellikler
 
-- **Sürükle & Bırak ve Panodan Yapıştırma:** 
-  - Görseli sürükleyip bırakma desteği
-  - Dosya gezgini ile görsel seçimi
-  - Pano üzerinden doğrudan yapıştırma (`Ctrl + V`) desteği
-- **Çoklu Format & Boyut Doğrulama:**
-  - PNG, JPG/JPEG ve WEBP format desteği
-  - Maksimum 15 MB dosya boyutu kontrolü ve kullanıcı dostu hata bildirimleri
-- **Akıllı Dil Seçimi:**
-  - 🇹🇷 **Türkçe (tur):** Özel Türkçe karakterler (`ç, ğ, ı, İ, ö, ş, ü`) için optimize edilmiştir.
-  - 🇬🇧 **İngilizce (eng):** Kod blokları, teknik dokümanlar ve global belgeler için.
-  - 🇹🇷+🇬🇧 **Türkçe + İngilizce (tur+eng):** Hibrit ve çok dilli belgeler için en geniş kapsama (Varsayılan).
-- **Yüklenen Görsel Önizleme & Bellek Yönetimi:**
-  - Görselin anlık önizlemesi, dosya boyutu, çözünürlük bilgileri
-  - Bellek sızıntılarını önlemek için otomatik `URL.revokeObjectURL` temizliği
-- **Canlı OCR İlerleme Durumu:**
-  - %0 - %100 canlı ilerleme çubuğu ve akıcı ışıldama animasyonu
-  - Türkçe aşama bildirimleri (*Model indiriliyor*, *OCR motoru başlatılıyor*, *Metinler taranıyor*)
-  - OCR işlemi sürerken yinelenen istekleri engelleme
-- **Gelişmiş Düzenleme Alanı:**
-  - Anlık karakter, kelime ve satır sayısı hesaplayıcı
-  - Tesseract güven skoru (Confidence %) ve işlem süresi göstergesi
-  - Yazı boyutu büyütme/küçültme kontrolleri (`A-` / `A+`)
-  - Boş veya okunamayan görseller için açıklayıcı geri bildirim
-- **Görsel Ön İşleme & İyileştirme Araçları:**
-  - 🔄 **90° Sağa Döndürme:** Yan veya ters çekilmiş fotoğrafları düzelterek tanıma oranını maksimize eder.
-  - 🌓 **Siyah-Beyaz / Gri Tonlama:** Arka plan gölgelerini ve kağıt gürültüsünü temizler.
-  - ⚡ **Yüksek Kontrast:** Soluk, fotokopi veya termal fişlerdeki silik yazıları belirginleştirir.
-  - 🔄 **Negatif / Ters Çevir:** Koyu tema ekran görüntüleri veya ters zeminler için.
-- **Kamera ile Belge Tarama:**
-  - Cihaz kamerasını (Webcam veya mobil arka kamera) açarak canlı önizleme ve kılavuz çerçeve ile doğrudan evrak fotoğrafı çekip tarama.
-- **Bul ve Değiştir (Find & Replace):**
-  - OCR sonrasında metindeki harf veya kelime hatalarını topluca bulup tek tıkla düzeltme.
-- **Zengin Dışa Aktarma Seçenekleri:**
-  - **Panoya Kopyala:** Animasyonlu kopyalandı onayı ile
-  - **TXT İndir:** Düz metin dosyası
-  - **Markdown (.md) İndir:** Başlık, kaynak ve tarih meta verileriyle
-  - **JSON İndir:** Karakter/kelime sayısı, güven skoru ve süre meta verileriyle
-- **Tek Tıkla Demo Testi:**
-  - Harici görsel aramaya gerek kalmadan uygulama içi Canvas ile üretilen Türkçe örnek notu tek tıkla yükleyip test etme imkânı.
+### 1. Görünüm & Tema Desteği
+- ☀️ **Açık (Beyaz) Tema (Varsayılan):** Yüksek kontrastlı, göz yormayan, modern ve minimalist beyaz tasarım.
+- 🌙 **Karanlık Tema:** Gece çalışmaları için tek tıkla geçiş yapılabilir zarif koyu tema.
+- 💾 **Tercih Hafızası:** Seçilen tema tercihi `localStorage` üzerinde hatırlanır.
+
+### 2. Görsel Giriş Seçenekleri
+- 🖱️ **Sürükle & Bırak:** Görseli doğrudan çalışma alanına bırakma.
+- 📋 **Panodan Yapıştırma (`Ctrl + V`):** Herhangi bir ekrandan alınan ekran görüntüsünü anında yükleme.
+- 📸 **Kamera ile Çekim:** Canlı kamera önizlemesi ve kılavuz çerçeve ile doğrudan evrak tarama.
+- ⚡ **Örnek Belge:** Test etmek için tek tıkla üretilen Türkçe test evrakını yükleme.
+
+### 3. Görsel İyileştirme (Ön İşleme)
+- 🔍 **Yakınlaştırma & İnceleme:** Yüklenen evrakın küçük yazılarını kontrol etmek için %50 - %250 yakınlaştırma.
+- 🔄 **90° Döndürme:** Yan veya ters çekilmiş fotoğrafları düzeltme.
+- 🌓 **Gri Ton / Siyah-Beyaz:** Arka plan gölgelerini ve kağıt lekelerini temizleme.
+- ⚡ **Yüksek Kontrast & Evrak/Fiş Modu:** Soluk market fişleri ve termal kağıtlardaki silik yazıları belirginleştirme.
+- 🔄 **Negatif / Ters Çevir:** Siyah zemin üzerine beyaz yazılı ekran görüntüleri için.
+
+### 4. Dil ve Karakter Desteği
+- 🇹🇷 **Türkçe (tur):** `ç, ğ, ı, İ, ö, ş, ü` harfleri ve Türkçe imla yapısı için optimize.
+- 🇬🇧 **İngilizce (eng):** Kod blokları ve global teknik dokümanlar.
+- 🇹🇷+🇬🇧 **Türkçe + İngilizce (tur+eng):** Hibrit ve çift dilli belgeler için en geniş kapsama (Varsayılan).
+
+### 5. Akıllı Metin Düzenleme & Temizleme
+- ⚡ **Satırları Birleştir (Paragraf Yap):** OCR'ın satır sonlarında böldüğü cümleleri akıcı paragraflara dönüştürür.
+- 🧹 **Fazla Boşlukları Temizle:** Çift boşlukları ve gereksiz satır aralıklarını ayıklar.
+- 🔤 **Büyük/Küçük Harf Dönüştürücü:** TÜMÜ BÜYÜK, tümü küçük veya Baş Harfleri Büyük seçenekleri.
+- 🔍 **Bul ve Değiştir (`Ctrl + F`):** OCR harf hatalarını topluca tespit edip düzeltme.
+- 🔎 **Yazı Boyutu Ayarı:** Düzenleyici yazı boyutunu büyütme / küçültme (`12px` - `24px`).
+
+### 6. Zengin Dışa Aktarma & Geçmiş
+- 📋 **Panoya Kopyala:** Animasyonlu kopyalama bildirimi.
+- 📄 **Düz Metin (TXT):** Sade `.txt` dosyası.
+- 📝 **Markdown (MD):** Başlık ve kaynak meta verileriyle zengin `.md` çıktısı.
+- 📊 **JSON Çıktısı:** Karakter sayısı, kelime sayısı, güven skoru ve süre meta verileriyle.
+- 🖨️ **Yazdır / PDF:** `@media print` stil şablonuyla temiz sayfa düzeni.
+- 🕒 **Yerel Son Taramalar (Geçmiş):** Son 8 tarama sadece tarayıcı hafızasında saklanır; geçmişten tek tıkla geri yüklenebilir.
 
 ---
 
-## 🔒 Gizlilik, Güvenlik ve Mimari
+## 🔒 Gizlilik Güvencesi
 
 1. **%100 İstemci Taraflı (Client-side):**
-   - Görselleriniz asla uzak sunuculara yüklenmez veya saklanmaz.
-   - Tüm OCR analizi cihazınızın kendi işlemcisi üzerinde, tarayıcınızın WebAssembly katmanında çalışır.
-2. **Ağ Kullanımı Bilgilendirmesi:**
-   - DeskPilot, Tesseract.js açık kaynak OCR motorunu kullanır.
-   - İlk kullanımda Tesseract çekirdeği ve seçilen dil paketleri (~15-20 MB) Tesseract CDN'inden tarayıcı önbelleğine indirilir. Sonraki kullanımlarda önbellekten anında çalışır.
-3. **Doğruluk Bildirimi:**
-   - OCR doğruluğu görsel kalitesi, çözünürlük ve aydınlatmaya bağlıdır. Kritik belgelerdeki metinlerin kontrol edilmesi önerilir.
+   - Belgeleriniz ve çıkarılan metinler hiçbir harici sunucuya iletilmez, kaydedilmez veya analiz edilmez.
+   - Tüm işlem cihazınızın işlemcisi ve tarayıcınızın WebAssembly katmanında yürütülür.
+2. **Ağ Kullanımı:**
+   - Açık kaynaklı Tesseract.js motoru ilk kullanımda gerekli dil modelini tarayıcı önbelleğine alır; sonraki kullanımlar çevrimdışı hızında çalışır.
 
 ---
 
-## 🛠️ Teknoloji Yığını
+## ⌨️ Klavye Kısayolları
 
-| Teknoloji | Kullanım Amacı |
+| Kısayol | İşlev |
 | :--- | :--- |
-| **React 19** | Bileşen tabanlı modern arayüz ve durum yönetimi |
-| **TypeScript** | Statik tip güvenliği, hatasız kod yapısı ve veri modelleri |
-| **Vite** | Yüksek performanslı derleme ve hızlı geliştirme sunucusu |
-| **Tesseract.js** | Tarayıcıda yerel OCR / metin tanıma motoru |
-| **Lucide React** | Modern ve tutarlı SVG ikon kütüphanesi |
-| **Vanilla CSS** | Koyu tema (Dark theme), cam efekti (Glassmorphism), özel kaydırma çubukları ve mikro-animasyonlar |
+| `Ctrl + V` / `⌘ + V` | Panodan görsel yapıştır |
+| `Ctrl + Enter` / `⌘ + Enter` | OCR taramasını başlat |
+| `Ctrl + F` / `⌘ + F` | Bul & Değiştir çubuğunu aç |
+| `Esc` | Açık modal pencerelerini kapat |
 
 ---
 
 ## 💻 Kurulum ve Çalıştırma
 
-Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları takip edin:
+Projeyi yerel geliştirme ortamınızda çalıştırmak için:
 
-### 1. Depoyu Klonlayın veya Klasörü Açın
 ```bash
-git clone https://github.com/kullaniciadi/deskpilot.git
-cd deskpilot
-```
-
-### 2. Bağımlılıkları Yükleyin
-```bash
+# Bağımlılıkları yükleyin
 npm install
-```
 
-### 3. Geliştirme Sunucusunu Başlatın
-```bash
+# Geliştirme sunucusunu başlatın
 npm run dev
-```
-Uygulama tarayıcınızda açılacaktır: [http://localhost:5173](http://localhost:5173)
 
-### 4. Üretim Derlemesini Alın (Production Build)
-```bash
+# Üretim derlemesi (Production build)
 npm run build
-npm run preview
 ```
 
 ---
 
-## 📋 Test Planı ve Doğrulama
+## 🛠️ Teknoloji Mimarisi
 
-| Test Senaryosu | Beklenen Sonuç | Durum |
-| :--- | :--- | :---: |
-| **Net Türkçe basılı metin** | Metin ve Türkçe karakterler (`ç, ğ, ı, İ, ö, ş, ü`) doğru tanınır. | ✅ Başarılı |
-| **İngilizce metin** | İngilizce karakterler ve teknik terimler doğru tanınır. | ✅ Başarılı |
-| **Karışık dil (TR + EN)** | İki dilli modelle her iki dil de başarıyla ayrıştırılır. | ✅ Başarılı |
-| **Yanlış dosya türü (.exe, .pdf vb.)** | OCR başlamadan önce açıklayıcı hata uyarısı verilir. | ✅ Başarılı |
-| **15 MB üzeri büyük dosya** | Dosya boyutu sınırı bildirilerek reddedilir. | ✅ Başarılı |
-| **Bulanık veya boş görsel** | Uygulama çökmez, okunabilir metin bulunamadı uyarısı gösterilir. | ✅ Başarılı |
-| **Çoklu tıklama / Yinelenen işlem** | OCR sürerken butonlar kilitlenir, yinelenen işlem engellenir. | ✅ Başarılı |
-| **Kopyalama & TXT indirme** | Panoya kopyalanır ve formatlı `.txt` dosyası indirilir. | ✅ Başarılı |
-| **Mobil ve Masaüstü uyumu** | Responsive tasarım tüm ekran boyutlarında kusursuz çalışır. | ✅ Başarılı |
-
----
-
-## 🗺️ Sürüm Yol Haritası (Roadmap)
-
-- [x] **v1.0 (Mevcut):** Tek görsel OCR, Türkçe/İngilizce dil seçimi, düzenlenebilir alan, panoya kopyalama, TXT indirme, önizleme ve hata yönetimi.
-- [ ] **v1.1:** Çok sayfalı PDF desteği ve sayfa bazlı metin çıkarma.
-- [ ] **v1.2:** Birden fazla görseli sırayla kuyrukta işleme.
-- [ ] **v1.3:** Aranabilir PDF ve DOCX olarak dışa aktarma.
-- [ ] **v2.0:** İsteğe bağlı AI destekli imla düzeltme, özetleme ve tablo algılama.
-
----
-
-## ⚠️ Bilinen Sınırlamalar
-- Aşırı eğik, düşük çözünürlüklü veya düşük kontrastlı görsellerde tanıma başarımı düşebilir.
-- El yazısı (Handwriting) desteği basılı metinlere göre daha düşüktür; en iyi sonuçlar bilgisayar yazı tiplerinde ve net basılı evraklarda elde edilir.
-- Karmaşık hücre yapısına sahip tablolar düz metin olarak çıkarılır.
-
----
-
-## 📄 Lisans
-Bu proje [MIT Lisansı](LICENSE) kapsamında açık kaynak olarak geliştirilmiştir.
-Tesseract.js ve dil veri modelleri Apache 2.0 lisansına tabidir.
+* **React 19** & **TypeScript**
+* **Vite** Derleme Altyapısı
+* **Tesseract.js** (WebAssembly OCR)
+* **Lucide React** Modern SVG İkonları
+* **Vanilla CSS Modern Design Tokens** (Aydınlık & Karanlık Mod)

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, AlertCircle, FileCheck2, Camera } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, FileText, AlertCircle, FileCheck2, Camera } from 'lucide-react';
 import { formatBytes } from '../utils/formatters';
 
 interface DropzoneProps {
@@ -37,7 +37,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
       if (!hasValidMime && !hasValidExt) {
         setLocalError(
-          `Desteklenmeyen dosya formatı ("${file.name}"). Lütfen sadece PNG, JPG/JPEG veya WEBP formatında bir görsel yükleyin.`
+          `Desteklenmeyen dosya biçimi ("${file.name}"). Lütfen PNG, JPG veya WEBP formatında bir görsel seçin.`
         );
         return;
       }
@@ -45,7 +45,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       // Size limit validation (15 MB)
       if (file.size > maxSizeBytes) {
         setLocalError(
-          `Dosya boyutu çok büyük (${formatBytes(file.size)}). DeskPilot maksimum ${formatBytes(maxSizeBytes)} boyutundaki görselleri kabul etmektedir.`
+          `Dosya boyutu çok büyük (${formatBytes(file.size)}). Maksimum dosya boyutu: ${formatBytes(maxSizeBytes)}.`
         );
         return;
       }
@@ -98,6 +98,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (disabled) return;
+
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -147,10 +148,10 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       >
         <div className="dropzone-inner">
           <div className="upload-icon-wrapper">
-            <UploadCloud size={44} className="upload-icon" />
+            <UploadCloud size={40} className="upload-icon" />
           </div>
 
-          <h2 className="dropzone-title">Görseli buraya sürükleyip bırakın</h2>
+          <h2 className="dropzone-title">Görseli veya belgeyi buraya sürükleyin</h2>
           <p className="dropzone-subtitle">
             veya cihazınızdan dosya seçmek için <span className="highlight-browse">göz atın</span>
           </p>
@@ -202,9 +203,10 @@ export const Dropzone: React.FC<DropzoneProps> = ({
           }}
           disabled={disabled}
           className="sample-btn"
+          title="Türkçe örnek bir metin belgesi yükleyerek test edin"
         >
-          <Sparkles size={15} className="sample-btn-icon" />
-          <span>Örnek Türkçe Notu Yükle</span>
+          <FileText size={15} className="sample-btn-icon" />
+          <span>Örnek Belge Yükle</span>
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Camera, X, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { Camera, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
@@ -159,7 +159,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             disabled={isLoading || !!error}
             className="btn-modal-capture"
           >
-            <Sparkles size={18} />
+            <Camera size={18} />
             <span>Fotoğrafı Çek ve Tara</span>
           </button>
         </div>

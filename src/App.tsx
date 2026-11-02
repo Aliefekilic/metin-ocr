@@ -4,7 +4,9 @@ import type {
   UploadedImage, 
   OcrProgressState, 
   OcrResultData, 
-  StatusToast 
+  StatusToast,
+  ThemeMode,
+  ScanHistoryItem
 } from './types';
 import { Header } from './components/Header';
 import { Dropzone } from './components/Dropzone';
@@ -16,14 +18,33 @@ import { FeaturesGuide } from './components/FeaturesGuide';
 import { Footer } from './components/Footer';
 import { AlertBanner } from './components/AlertBanner';
 import { CameraCaptureModal } from './components/CameraCaptureModal';
+import { HistoryModal } from './components/HistoryModal';
+import { ShortcutsModal } from './components/ShortcutsModal';
 import { formatBytes, generateSampleImage } from './utils/formatters';
 import { processImageOcr } from './services/ocrService';
+import { 
+  getScanHistory, 
+  saveScanHistory, 
+  deleteScanHistoryItem, 
+  clearScanHistory 
+} from './utils/historyManager';
 
 export const App: React.FC = () => {
+  // Theme state: defaults to 'light' per user request
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('metin_theme') as ThemeMode;
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'light';
+  });
+
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('tur+eng');
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const [history, setHistory] = useState<ScanHistoryItem[]>(() => getScanHistory());
+
   const [progressState, setProgressState] = useState<OcrProgressState>({
     status: '',
     rawStatus: '',
@@ -34,10 +55,19 @@ export const App: React.FC = () => {
   const [editableText, setEditableText] = useState<string>('');
   const [alert, setAlert] = useState<StatusToast | null>(null);
 
-  // Timer reference for elapsed time during OCR
   const timerRef = useRef<number | null>(null);
 
-  // Clean up Object URL when component unmounts
+  // Sync theme to document element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('metin_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  // Clean up Object URL on unmount
   useEffect(() => {
     return () => {
       if (uploadedImage?.previewUrl) {
@@ -81,13 +111,24 @@ export const App: React.FC = () => {
           setAlert({
             type: 'warning',
             message:
-              'Görsel tarandı ancak okunabilir metin tespit edilemedi. Görseli iyileştirmek için sol paneldeki "İyileştir" butonundan döndürmeyi veya kontrastı artırmayı deneyin.',
+              'Görsel tarandı ancak okunabilir metin tespit edilemedi. Görseli iyileştirmek için sol paneldeki "İyileştir" menüsünden döndürmeyi veya kontrastı artırmayı deneyin.',
           });
         } else {
           setAlert({
             type: 'success',
-            message: `Metin çıkarma başarıyla tamamlandı! (${result.wordCount} kelime, ${result.charCount} karakter tespit edildi)`,
+            message: `Metin başarıyla çıkarıldı (${result.wordCount} kelime, ${result.charCount} karakter).`,
           });
+
+          // Save to local scan history
+          const updatedHistory = saveScanHistory({
+            fileName: targetFile.name,
+            text: result.text,
+            charCount: result.charCount,
+            wordCount: result.wordCount,
+            confidence: result.confidence,
+            language: targetLang,
+          });
+          setHistory(updatedHistory);
         }
       } catch (err) {
         console.error('OCR process failure:', err);
@@ -95,7 +136,7 @@ export const App: React.FC = () => {
           err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu';
         setAlert({
           type: 'error',
-          message: `OCR işlemi sırasında hata oluştu: ${errorMessage}. Lütfen görseli kontrol edin veya sayfayı yenileyip tekrar deneyin.`,
+          message: `OCR işlemi sırasında hata oluştu: ${errorMessage}. Lütfen görseli kontrol edip tekrar deneyin.`,
         });
       } finally {
         if (timerRef.current) {
@@ -108,7 +149,7 @@ export const App: React.FC = () => {
     [isProcessing, uploadedImage, selectedLanguage]
   );
 
-  // Handle file selection from Dropzone, Camera, or Paste
+  // Handle file selection
   const handleFileSelect = useCallback(
     (file: File) => {
       if (uploadedImage?.previewUrl) {
@@ -145,12 +186,32 @@ export const App: React.FC = () => {
     [uploadedImage, selectedLanguage, runOcr]
   );
 
-  // Handle loading sample demo document
+  // Global keyboard shortcuts (Ctrl+Enter to run OCR, Esc to close modals)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (uploadedImage && !isProcessing) {
+          e.preventDefault();
+          runOcr(uploadedImage.file, selectedLanguage);
+        }
+      } else if (e.key === 'Escape') {
+        setIsCameraOpen(false);
+        setIsHistoryOpen(false);
+        setIsShortcutsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uploadedImage, isProcessing, selectedLanguage, runOcr]);
+
+  // Load sample demo document
   const handleLoadSample = useCallback(async () => {
     try {
       const sampleFile = await generateSampleImage();
       handleFileSelect(sampleFile);
     } catch (err) {
+      console.warn('Örnek görsel hatası:', err);
       setAlert({
         type: 'error',
         message: 'Örnek görsel oluşturulurken bir hata oluştu.',
@@ -158,7 +219,7 @@ export const App: React.FC = () => {
     }
   }, [handleFileSelect]);
 
-  // Handle language change
+  // Language change
   const handleLanguageChange = (newLang: LanguageCode) => {
     setSelectedLanguage(newLang);
     if (uploadedImage && !isProcessing) {
@@ -166,7 +227,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Handle clear all
+  // Clear workspace
   const handleClear = () => {
     if (uploadedImage?.previewUrl) {
       URL.revokeObjectURL(uploadedImage.previewUrl);
@@ -179,15 +240,45 @@ export const App: React.FC = () => {
     setElapsedSeconds(0);
   };
 
-  return (
-    <div className="deskpilot-app">
-      {/* Background ambient lighting */}
-      <div className="ambient-background">
-        <div className="ambient-orb orb-1"></div>
-        <div className="ambient-orb orb-2"></div>
-      </div>
+  // Restore item from history
+  const handleSelectHistoryItem = (item: ScanHistoryItem) => {
+    setEditableText(item.text);
+    setOcrResult({
+      text: item.text,
+      confidence: item.confidence,
+      charCount: item.charCount,
+      wordCount: item.wordCount,
+      lineCount: item.text ? item.text.split('\n').length : 0,
+      processedAt: new Date(item.timestamp),
+      processingTimeMs: 0,
+      languageUsed: selectedLanguage,
+    });
+    setAlert({
+      type: 'info',
+      message: `"${item.fileName}" başlıklı geçmiş taraması yüklendi.`,
+    });
+  };
 
-      <Header />
+  // History operations
+  const handleClearAllHistory = () => {
+    clearScanHistory();
+    setHistory([]);
+  };
+
+  const handleDeleteHistoryItem = (id: string) => {
+    const updated = deleteScanHistoryItem(id);
+    setHistory(updated);
+  };
+
+  return (
+    <div className="app-shell">
+      <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        historyCount={history.length}
+      />
 
       <main className="main-content">
         <div className="content-container">
@@ -256,7 +347,7 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Features and Roadmap Section */}
+          {/* Features, Tips and FAQs */}
           <FeaturesGuide />
         </div>
       </main>
@@ -266,6 +357,22 @@ export const App: React.FC = () => {
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onCapture={handleFileSelect}
+      />
+
+      {/* History Modal */}
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={history}
+        onSelectHistoryItem={handleSelectHistoryItem}
+        onClearAll={handleClearAllHistory}
+        onDeleteItem={handleDeleteHistoryItem}
+      />
+
+      {/* Shortcuts Modal */}
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
       />
 
       <Footer />

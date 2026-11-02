@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScanText, Heart } from 'lucide-react';
+import { ScanText, ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,20 +8,18 @@ export const Footer: React.FC = () => {
         <div className="footer-left">
           <div className="footer-logo">
             <ScanText size={18} className="text-primary" />
-            <span className="footer-brand-name">DeskPilot</span>
+            <span className="footer-brand-name">Metin</span>
           </div>
           <span className="footer-copy">
-            Görselden metin çıkarma (OCR) web uygulaması
+            Açık kaynaklı, tarayıcı tabanlı yerel görselden metin çıkarma (OCR) aracı
           </span>
         </div>
 
         <div className="footer-right">
-          <span className="footer-built-with">
-            React, TypeScript & Tesseract.js ile geliştirildi
-          </span>
-          <span className="heart-span">
-            <Heart size={14} className="heart-icon" />
-          </span>
+          <div className="footer-privacy-note">
+            <ShieldCheck size={14} className="text-emerald" />
+            <span>Verileriniz bilgisayarınızdan dışarı çıkmaz</span>
+          </div>
         </div>
       </div>
     </footer>
